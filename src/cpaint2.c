@@ -44,8 +44,44 @@ static int ExcludePunct(const char punct) {
   return 0;
 }
 
-static void PrintPunct(const char** code) {
-  if (!ExcludePunct(**code)) {
+static void PrintPunct(const char** code,
+                       const char* const first_ptr) {
+  const char* copy = NULL;
+  
+  if (**code == '(') {
+    if (*code != first_ptr) {
+      if (!isalpha(*((*code)-1))) {
+        fputs("\033[34m(\033[0m", stdout);
+        Next(code);
+        return;
+      }
+    } else {
+      fputs("\033[34m(\033[0m", stdout);
+      Next(code);
+      return;
+    }
+
+    copy = (*code)-1;
+
+    while (isalpha(*copy)) {
+      putchar('\b');
+      copy--;
+    }
+
+    copy++;
+
+    fputs("\033[33m", stdout);
+
+    while (*copy != '(') {
+      putchar(*(copy++));
+    }
+
+    fputs("\033[0;34m", stdout);
+
+    putchar(*Next(code));
+
+    fputs("\033[0m", stdout);
+  } else if (!ExcludePunct(**code)) {
     fputs("\033[34m", stdout);
     putchar(*Next(code));
     fputs("\033[0m", stdout);
@@ -191,10 +227,10 @@ static void PrintPP(const char** code,
   fputs("\033[0m", stdout);
 }
 
-#define TOTAL_KEYWORDS 35
+#define TOTAL_KEYWORDS 36
 
 static int CantBeAtKeywordStart(const char ch) {
-  if (ch != ' ' && ch != '\t' && ch != '(' && ch != '\n' && ch != ';') {
+  if (!isspace(ch) && ch != '(' && ch != ';') {
     return 1;
   }
 
@@ -220,41 +256,18 @@ static int PrintKeyword(const char** code,
     char* name;
     int len;
   } Keywords[TOTAL_KEYWORDS] = {
-    {"if", 2},
-    {"int", 3},
-    {"for", 3},
-    {"void", 4},
-    {"char", 4},
-    {"long", 4},
-    {"goto", 4},
-    {"case", 4},
-    {"FILE", 4},
-    {"else", 4},
-    {"bool", 4},
-    {"true", 4},
-    {"union", 5},
-    {"const", 5},
-    {"short", 5},
-    {"while", 5},
-    {"false", 5},
-    {"break", 5},
-    {"float", 5},
-    {"struct", 6},
-    {"switch", 6},
-    {"double", 6},
-    {"static", 6},
-    {"extern", 6},
-    {"size_t", 6},
-    {"sizeof", 6},
-    {"signed", 6},
-    {"inline", 6},
-    {"return", 6},
-    {"typedef", 7},
-    {"default", 7},
-    {"volatile", 8},
-    {"unsigned", 8},
-    {"continue", 8},
-    {"restrict", 8}
+    {"do", 2},       {"if", 2},       {"int", 3},
+    {"for", 3},      {"void", 4},     {"char", 4},
+    {"long", 4},     {"goto", 4},     {"case", 4},
+    {"FILE", 4},     {"else", 4},     {"bool", 4},
+    {"true", 4},     {"union", 5},    {"const", 5},
+    {"short", 5},    {"while", 5},    {"false", 5},
+    {"break", 5},    {"float", 5},    {"struct", 6},
+    {"switch", 6},   {"double", 6},   {"static", 6},
+    {"extern", 6},   {"size_t", 6},   {"sizeof", 6},
+    {"signed", 6},   {"inline", 6},   {"return", 6},
+    {"typedef", 7},  {"default", 7},  {"volatile", 8},
+    {"unsigned", 8}, {"continue", 8}, {"restrict", 8}
   };
 
   for (; i < TOTAL_KEYWORDS; i++) {
@@ -303,7 +316,7 @@ static void SourceHighlight(const char* code) {
     } else if (isdigit(*code)) {
       PrintDigit(&code, first_ptr);
     } else if (ispunct(*code)) {
-      PrintPunct(&code);
+      PrintPunct(&code, first_ptr);
     } else {
       putchar(*Next(&code));
     }
