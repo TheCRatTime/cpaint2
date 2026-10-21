@@ -29,7 +29,7 @@ static void Comment(void) {
 }
 
 static const char* Next(const char** code) {
-  return (**code ? ((*code)++) : '\0');
+  return (**code ? ((*code)++) : *code);
 }
 
 static const char Peek(const char* code) {
